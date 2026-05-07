@@ -1,5 +1,7 @@
 # Brazo Robótico con Arduino UNO Q
 
+> 🚧 **Fase de desarrollo** — El software de tracking por visión está completo. Pendiente: conexión física con la Mega 2560 y calibración final de servos.
+
 Control de mano robótica (5 dedos, servos MG996R) mediante visión por computador con **MediaPipe** y **Arduino UNO Q**.
 
 ## Arquitectura
