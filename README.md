@@ -35,7 +35,7 @@ BrazoRobotico/
 │   ├── v1-browser/           # Frontend: MediaPipe.js en navegador
 │   ├── v2-server/            # Frontend: frames → UNO Q (experimental)
 │   ├── server.py             # Flask + WebSocket + IK
-│   ├── static/index.html     # Interfaz web (glassmorphism)
+│   ├── static/index.html     # Interfaz web (flat design profesional, grid 2-columnas)
 │   └── ...
 ├── docs/
 │   ├── brazo-robotico.pdf    # Documentación técnica

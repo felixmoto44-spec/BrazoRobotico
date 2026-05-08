@@ -18,7 +18,7 @@
 - ✅ **Chart.js** — gráfica de 5 ángulos en tiempo real
 - ✅ **Record/Replay** — grabación con deep copy + reproducción con rAF
 - ✅ **WebSocket** con indicador de latencia en ms
-- ✅ **Glassmorphism** + responsive (desktop cámara+3D lado a lado, mobile apilado)
+- ✅ **Flat design** profesional (grid 2-columnas, fondos sólidos #0a0e14/#111820, sin scroll ≥1366×768)
 - ✅ **WiFi AP** (RobotHand) como backup
 - ✅ **PDF documentación** (79 KB)
 - ✅ **GitHub** repo público

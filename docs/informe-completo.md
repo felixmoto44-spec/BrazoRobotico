@@ -239,7 +239,7 @@ Skills instaladas en el proyecto (`.opencode/agents/`): 70, incluyendo Embedded 
 | Gráfica de ángulos | Chart.js (carga asíncrona) | ✅ |
 | Grabación | JSON → descarga | ✅ |
 | Reproducción | Carga JSON o memoria | ✅ |
-| Glassmorphism | CSS backdrop-filter | ✅ |
+| Flat design profesional | CSS Grid 2-columnas, fondos sólidos, sin glassmorphism | ✅ |
 
 ### Dependencias Python
 
