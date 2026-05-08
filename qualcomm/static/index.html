@@ -110,6 +110,7 @@ import { HandLandmarker, FilesetResolver } from "@mediapipe/tasks-vision";
 
 const WS_URL = `wss://${location.hostname}:3000/ws`;
 let ws = null, handLandmarker = null, tracking = false, animFrame = null, lastSend = 0, sendTime = 0;
+let lastAngles = [90,90,90,90,90];
 const video = document.getElementById("video");
 const canv = document.getElementById("canv");
 const ctx = canv.getContext("2d");
@@ -128,7 +129,7 @@ window.start = async function(){
   ws=new WebSocket(WS_URL);
   ws.onopen=()=>{setStatus("Conectado",true);log("WebSocket conectado");};
   ws.onclose=()=>{setStatus("Desconectado",false);log("WebSocket cerrado");};
-  ws.onmessage=(e)=>{const d=JSON.parse(e.data);if(d.angles){updateServos(d.angles);pushChart(d.angles);}const lag=Math.round(performance.now()-sendTime);const el=document.getElementById("lag");el.textContent=lag+"ms";el.className="latency "+(lag<80?"good":lag<150?"warn":"bad");};
+  ws.onmessage=(e)=>{const d=JSON.parse(e.data);if(d.angles){lastAngles=d.angles;updateServos(d.angles);pushChart(d.angles);}const lag=Math.round(performance.now()-sendTime);const el=document.getElementById("lag");el.textContent=lag+"ms";el.className="latency "+(lag<80?"good":lag<150?"warn":"bad");};
   const vision=await FilesetResolver.forVisionTasks("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.18/wasm");
   handLandmarker=await HandLandmarker.createFromOptions(vision,{baseOptions:{modelAssetPath:"https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task",delegate:"GPU"},runningMode:"VIDEO",numHands:1});
   tracking=true;document.getElementById("bStop").disabled=false;document.getElementById("bRec").disabled=false;log("Tracking activo");loop();
@@ -137,10 +138,19 @@ window.start = async function(){
 window.stop = function(){tracking=false;document.getElementById("bStart").disabled=false;document.getElementById("bStop").disabled=true;document.getElementById("bRec").disabled=true;if(ws)ws.close();if(animFrame)cancelAnimationFrame(animFrame);if(video.srcObject)video.srcObject.getTracks().forEach(t=>t.stop());if(recording)toggleRecord();setStatus("Detenido",false);log("Tracking detenido");};
 
 // Grabación
-let recordedFrames=[],recording=false,replaying=false,replayIdx=0,replayTimer=null;
+let recordedFrames=[],recording=false,replaying=false,replayIdx=0,wasTracking=false;
 window.toggleRecord=function(){if(recording){recording=false;document.getElementById("bRec").textContent="⏺ Grabar";document.getElementById("bRec").classList.remove("recording");const b=new Blob([JSON.stringify(recordedFrames)],{type:"application/json"});const a=document.createElement("a");a.href=URL.createObjectURL(b);a.download="robot-"+Date.now()+".json";a.click();log("Grabado: "+recordedFrames.length+" frames");recordedFrames=[];}else{recording=true;recordedFrames=[];document.getElementById("bRec").textContent="⏹ Parar";document.getElementById("bRec").classList.add("recording");log("Grabación iniciada");}};
-window.toggleReplay=function(){if(replaying){replaying=false;clearInterval(replayTimer);log("Reproducción detenida");document.getElementById("bReplay").textContent="▶ Reproducir";return;}if(!recordedFrames.length){const i=document.createElement("input");i.type="file";i.accept=".json";i.onchange=e=>{const r=new FileReader();r.onload=ev=>{recordedFrames=JSON.parse(ev.target.result);startReplay();};r.readAsText(e.target.files[0]);};i.click();return;}startReplay();};
-function startReplay(){replaying=true;replayIdx=0;document.getElementById("bReplay").textContent="⏹ Parar rep.";log("Reproduciendo "+recordedFrames.length+" frames");replayTimer=setInterval(()=>{if(replayIdx>=recordedFrames.length){toggleReplay();return;}const f=recordedFrames[replayIdx++];updateServos(f.angles);pushChart(f.angles);update3D(f.landmarks);},36);}
+window.toggleReplay=function(){if(replaying){replaying=false;if(wasTracking)tracking=true;log("Reproducción detenida");document.getElementById("bReplay").textContent="▶ Reproducir";return;}if(!recordedFrames.length){const i=document.createElement("input");i.type="file";i.accept=".json";i.onchange=e=>{const r=new FileReader();r.onload=ev=>{recordedFrames=JSON.parse(ev.target.result);startReplay();};r.readAsText(e.target.files[0]);};i.click();return;}startReplay();};
+function startReplay(){replaying=true;replayIdx=0;wasTracking=tracking;tracking=false;if(animFrame){cancelAnimationFrame(animFrame);animFrame=null;}document.getElementById("bReplay").textContent="⏹ Parar rep.";log("Reproduciendo "+recordedFrames.length+" frames");replayLoop();}
+
+function replayLoop(){
+  if(!replaying||replayIdx>=recordedFrames.length){if(replaying)toggleReplay();return;}
+  const f=recordedFrames[replayIdx++];
+  if(f.angles)updateServos(f.angles);
+  if(f.angles)pushChart(f.angles);
+  update3D(f.landmarks);
+  setTimeout(()=>requestAnimationFrame(replayLoop),36);
+}
 
 // Gráfica (carga asíncrona)
 let chart=null,chartData=null;
@@ -173,13 +183,13 @@ function update3D(lm){if(!_3d.ok||!lm||lm.length<21)return;for(let i=0;i<21;i++)
 
 const DRAW=[[0,1],[0,5],[0,17],[1,2],[2,3],[3,4],[5,6],[6,7],[7,8],[9,10],[10,11],[11,12],[13,14],[14,15],[15,16],[17,18],[18,19],[19,20],[5,9],[9,13],[13,17]];
 
-function loop(){if(!tracking)return;ctx.clearRect(0,0,canv.width,canv.height);
+function loop(){if(!tracking||replaying)return;ctx.clearRect(0,0,canv.width,canv.height);
   if(handLandmarker&&video.readyState>=2){const res=handLandmarker.detectForVideo(video,performance.now());if(res.landmarks&&res.landmarks.length>0){
     const lm=res.landmarks[0];const raw=lm.map(p=>({x:p.x,y:p.y,z:p.z}));const landmarks=smooth(raw);
     ctx.strokeStyle="rgba(0,230,118,0.25)";ctx.lineWidth=1.5;DRAW.forEach(([a,b])=>{ctx.beginPath();ctx.moveTo(landmarks[a].x*canv.width,landmarks[a].y*canv.height);ctx.lineTo(landmarks[b].x*canv.width,landmarks[b].y*canv.height);ctx.stroke();});
     landmarks.forEach((p,i)=>{const x=p.x*canv.width,y=p.y*canv.height;ctx.beginPath();ctx.arc(x,y,[4,8,12,16,20].includes(i)?4.5:2.5,0,Math.PI*2);ctx.fillStyle=[4,8,12,16,20].includes(i)?"#00e676":"rgba(0,230,118,0.45)";ctx.fill();});
     const now=performance.now();if(now-lastSend>50&&ws&&ws.readyState===WebSocket.OPEN){sendTime=now;ws.send(JSON.stringify({landmarks,timestamp:now}));lastSend=now;}
-    update3D(landmarks);if(recording)recordedFrames.push({landmarks,timestamp:now});
+    update3D(landmarks);if(recording)recordedFrames.push({landmarks:landmarks.map(p=>({x:p.x,y:p.y,z:p.z})),angles:[...lastAngles],timestamp:now});
   }}
   animFrame=requestAnimationFrame(loop);
 }
