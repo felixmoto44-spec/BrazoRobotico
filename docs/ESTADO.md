@@ -19,6 +19,8 @@
 - ✅ **Record/Replay** — grabación con deep copy + reproducción con rAF
 - ✅ **WebSocket** con indicador de latencia en ms
 - ✅ **Flat design** profesional (grid 2-columnas, fondos sólidos #0a0e14/#111820, sin scroll ≥1366×768)
+- ✅ **CSS externo** — `style.css` (383 líneas) cacheable por separado
+- ✅ **Service Worker** — caché offline `robot-v1` (CSS + HTML + CDNs)
 - ✅ **WiFi AP** (RobotHand) como backup
 - ✅ **PDF documentación** (79 KB)
 - ✅ **GitHub** repo público
@@ -39,7 +41,9 @@
 | Archivo | Descripción |
 |---|---|
 | `qualcomm/server.py` | Flask + WebSocket + IK + serial |
-| `qualcomm/static/index.html` | Frontend completo |
+| `qualcomm/static/index.html` | Frontend (HTML + JS) |
+| `qualcomm/static/style.css` | CSS externo (383 líneas) |
+| `qualcomm/static/sw.js` | Service Worker caché offline |
 | `qualcomm/v1-browser/` | Backup v1 (navegador) |
 | `qualcomm/v2-server/` | Experimental v2 (server-side) |
 | `stm32_sketch/bridge/bridge.ino` | STM32U585 bridge + LED matrix |
