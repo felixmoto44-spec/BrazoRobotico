@@ -53,16 +53,19 @@ El GND de la fuente externa debe estar conectado al GND común.
   [Cámara móvil/PC]
        │ WiFi
        ▼
-  [Flask Server :3000]    ← Qualcomm Linux (Debian)
-       │ RPC
+  [Flask Server :3000]         ← Qualcomm Linux (Debian)
+       │ TCP:7500
        ▼
-  [STM32U585 MCU]         ← Zephyr/Arduino sketch
+  [SOCAT]                      ← Puente TCP ↔ USB Gadget Serial
+       │ USB CDC ACM
+       ▼
+  [STM32U585 Bridge Sketch]    ← LED Matrix + puente UART
        │ Serial1 (D0/D1)
        ▼
-  [Mega 2560 Serial3]      ← Arduino sketch
+  [Mega 2560 Serial3]          ← Arduino sketch
        │ PWM ×5
        ▼
-  [MG996R Servos ×5]      ← Accionamiento dedos
+  [MG996R Servos ×5]           ← Accionamiento dedos
 ```
 
 ### Protocolo Serial UNO Q → Mega

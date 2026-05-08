@@ -18,9 +18,7 @@ Control de mano robótica (5 dedos, servos MG996R) mediante visión por computad
 ## Arquitectura
 
 ```
-[Cámara móvil/PC] → WiFi → [UNO Q Flask :3000] → [STM32U585 MCU] → [Mega 2560] → [Servos MG996R ×5]
-                              ↑ LED Matrix
-                              ↑ (Qualcomm Linux)
+Browser → WiFi → [UNO Q Flask :3000] → TCP:7500 → SOCAT → STM32 Bridge (USB) → Serial1 → Mega Serial3 → PWM → Servos MG996R ×5
 ```
 
 - **Qualcomm QRB2210** (Debian Linux): Servidor Flask + WebSocket + IK

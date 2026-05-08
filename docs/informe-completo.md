@@ -86,9 +86,12 @@ UNO Q D0 (RX) ──✂── Mega D14 (TX3)
        │ WiFi (Fephone / Xiaomi)
        ▼
   [Flask Server HTTPS :3000]  ← Qualcomm Linux (Debian)
-       │ UART /dev/ttyHS1 115200 baud
+       │ TCP:7500
        ▼
-  [STM32U585 — Bridge Sketch]  ← Arduino sketch
+  [SOCAT]                      ← Puente TCP ↔ USB Gadget Serial
+       │ USB CDC ACM
+       ▼
+  [STM32U585 — Bridge Sketch]  ← Arduino sketch (LED Matrix + puente UART)
        │ Serial1 (D0/D1)
        ▼
   [Mega 2560 — Servo Sketch]   ← Arduino sketch
@@ -142,7 +145,7 @@ Anti-parpadeo: 400ms de histéresis antes de cambiar el display.
 3. Filtro EMA (α=0.3) suaviza los landmarks para eliminar jitter
 4. WebSocket envía coordenadas al servidor Flask
 5. IK Engine convierte landmarks → ángulos de 5 servos
-6. Comandos viajan: Flask → /dev/ttyHS1 → STM32 Serial2 → Serial1 (D0/D1) → Mega Serial3
+6. Comandos viajan: Flask → TCP:7500 → SOCAT → STM32 Serial → Bridge → Serial1 → Mega Serial3
 7. Mega interpola suavemente (rampa 1°/12ms) los ángulos actuales hacia los target
 8. Servos MG996R replican la posición de los dedos
 

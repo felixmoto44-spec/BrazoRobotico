@@ -14,7 +14,7 @@
 - ✅ Tracking de mano con **MediaPipe.js** en navegador
 - ✅ **IK 3D** — conversión landmarks → ángulos de servo (Python)
 - ✅ **LED Matrix** — números 0-5 + smiley (ArduinoGraphics)
-- ✅ **3D Hand** — mano virtual con Three.js (carga asíncrona)
+- ✅ **3D Hand** — mano 3D con Three.js (carga asíncrona)
 - ✅ **Chart.js** — gráfica de 5 ángulos en tiempo real
 - ✅ **Record/Replay** — grabación con deep copy + reproducción con rAF
 - ✅ **WebSocket** con indicador de latencia en ms
@@ -57,7 +57,7 @@
 ## Notas para el siguiente chat
 
 - El servidor está en auto-arranque. Si se reinicia el UNO Q, Flask se levanta solo.
-- SOCAT hay que iniciarlo manualmente: `sudo socat file:/dev/ttyGS0,raw,echo=0,b9600,crtscts=0 tcp:127.0.0.1:7500 &`
+- SOCAT hay que iniciarlo manualmente: `sudo socat file:/dev/ttyGS0,raw,echo=0,b115200,crtscts=0 tcp:127.0.0.1:7500 &`
 - El router (`arduino-router.service`) tiene un drop-in que vacía ExecStopPost/ExecStartPre para evitar resets del STM32.
 - Password SSH y sudo del UNO Q: 1g51yF52g0**
 - La contraseña de sudo del portátil: 5915
