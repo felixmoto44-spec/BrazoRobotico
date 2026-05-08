@@ -4,6 +4,17 @@
 
 Control de mano robótica (5 dedos, servos MG996R) mediante visión por computador con **MediaPipe** y **Arduino UNO Q**.
 
+## Estado actual
+
+| Componente | Estado |
+|---|---|
+| Tracking (MediaPipe.js) | ✅ |
+| IK 3D (Python) | ✅ |
+| LED Matrix (números + smiley) | ✅ |
+| 3D Hand (Three.js) | ✅ |
+| Record/Replay | ✅ |
+| Conexión Mega + servos | ⏳ Pendiente |
+
 ## Arquitectura
 
 ```
