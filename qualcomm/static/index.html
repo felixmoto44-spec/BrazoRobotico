@@ -9,7 +9,7 @@
   * { margin:0; padding:0; box-sizing:border-box; }
   :root { --green:#00e676; }
   body { font-family:'Inter',system-ui,sans-serif; background:radial-gradient(ellipse at 50% 0%,#0b1a2e 0%,#060b14 60%,#030610 100%); color:#c8d6e5; min-height:100vh; display:flex; flex-direction:column; align-items:center; font-size:14px; }
-  .container { max-width:480px; width:100%; padding:4px; display:flex; flex-direction:column; gap:4px; }
+  .container { max-width:860px; width:100%; padding:4px; display:flex; flex-direction:column; gap:4px; }
 
   header { text-align:center; padding:6px 0 0; }
   header h1 { font-size:1.1em; font-weight:700; background:linear-gradient(135deg,var(--green),#00c853,#69f0ae); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
@@ -26,8 +26,9 @@
 
   .card { background:rgba(255,255,255,0.025); border:1px solid rgba(255,255,255,0.05); border-radius:10px; }
 
-  .video-wrap { position:relative; width:100%; aspect-ratio:4/3; background:#000; overflow:hidden; border-radius:10px 10px 0 0; }
-  .three-wrap { width:100%; aspect-ratio:2/1; background:#060b14; overflow:hidden; }
+  .cam-3d-row { display:flex; gap:4px; flex-direction:row; align-items:stretch; }
+  .video-wrap { position:relative; flex:1 1 50%; min-width:0; aspect-ratio:4/3; background:#000; overflow:hidden; border-radius:10px 0 0 10px; }
+  .three-wrap { flex:1 1 50%; min-width:0; background:#060b14; overflow:hidden; border-radius:0 10px 10px 0; }
   .video-wrap video, .video-wrap canvas { position:absolute; top:0; left:0; width:100%; height:100%; }
   .video-wrap video { z-index:1; display:block; }
   .video-wrap canvas { z-index:2; pointer-events:none; }
@@ -59,6 +60,8 @@
   .log { max-height:60px; overflow-y:auto; padding:2px; }
   .log-l { padding:1px 6px; font-size:0.6em; font-family:monospace; color:#546e7a; border-bottom:1px solid rgba(255,255,255,0.02); }
   footer { text-align:center; padding:2px; font-size:0.55em; color:#1c2833; }
+
+  @media (max-width:600px) { .cam-3d-row { flex-direction:column; } .three-wrap { aspect-ratio:2/1; border-radius:0 0 10px 10px; } .video-wrap { border-radius:10px 10px 0 0; } }
 </style>
 </head>
 <body>
@@ -67,13 +70,16 @@
 <div class="status-bar"><div class="dot" id="dot"></div><span id="status">Desconectado</span><span class="latency" id="lag">·</span></div>
 
 <div class="card">
-  <div class="video-wrap">
-    <video id="video" autoplay playsinline muted></video>
-    <canvas id="canv"></canvas>
-    <div class="finger-dots" id="fdots">
-      <div class="fd" title="Pulgar"></div><div class="fd" title="Índice"></div>
-      <div class="fd" title="Corazón"></div><div class="fd" title="Anular"></div><div class="fd" title="Meñique"></div>
+  <div class="cam-3d-row">
+    <div class="video-wrap">
+      <video id="video" autoplay playsinline muted></video>
+      <canvas id="canv"></canvas>
+      <div class="finger-dots" id="fdots">
+        <div class="fd" title="Pulgar"></div><div class="fd" title="Índice"></div>
+        <div class="fd" title="Corazón"></div><div class="fd" title="Anular"></div><div class="fd" title="Meñique"></div>
+      </div>
     </div>
+    <div class="three-wrap" id="threeBox"></div>
   </div>
   <div class="btn-row">
     <button class="b-on" id="bStart" onclick="start()">▶ Iniciar</button>
@@ -94,8 +100,6 @@
 </div>
 
 <div class="card"><div class="chart-wrap"><canvas id="chart"></canvas></div></div>
-
-<div class="card"><div class="three-wrap" id="threeBox"></div></div>
 
 <div class="card log" id="log"><div class="log-l">Esperando conexión...</div></div>
 <footer>ferxver · UNO Q · 2026</footer>
@@ -175,11 +179,11 @@ function pushChart(angles){if(!chart||!chartData)return;const t=new Date().toTim
 // Mano 3D (carga asíncrona)
 let _3d={ok:false,scene:null,cam:null,rnd:null,joints:[],bones:[],pairs:[]};
 (function init3D(){
-  function setup(){if(typeof THREE==="undefined")return;const b=document.getElementById("threeBox");if(!b)return;try{_3d.scene=new THREE.Scene();_3d.scene.background=new THREE.Color(0x060b14);_3d.cam=new THREE.PerspectiveCamera(45,1,0.1,10);_3d.cam.position.set(0,0.3,1.8);_3d.cam.lookAt(0,0.3,0);_3d.rnd=new THREE.WebGLRenderer({antialias:true});_3d.rnd.setPixelRatio(1);_3d.rnd.setSize(400,200);b.appendChild(_3d.rnd.domElement);const jm=new THREE.MeshBasicMaterial({color:0x00e676}),bm=new THREE.LineBasicMaterial({color:0x00e676,opacity:0.4,transparent:true});for(let i=0;i<21;i++){const s=new THREE.SphereGeometry(0.015,8,8);_3d.joints.push(new THREE.Mesh(s,jm));_3d.scene.add(_3d.joints[i]);}_3d.pairs=[[0,1],[0,5],[0,17],[1,2],[2,3],[3,4],[5,6],[6,7],[7,8],[9,10],[10,11],[11,12],[13,14],[14,15],[15,16],[17,18],[18,19],[19,20],[5,9],[9,13],[13,17]];_3d.bones=_3d.pairs.map(()=>{const g=new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(),new THREE.Vector3()]);return new THREE.Line(g,bm);});_3d.bones.forEach(l=>_3d.scene.add(l));_3d.ok=true;_3d.rnd.render(_3d.scene,_3d.cam);log("Mano 3D activa");}catch(e){}}
+  function setup(){if(typeof THREE==="undefined")return;const b=document.getElementById("threeBox");if(!b)return;try{_3d.scene=new THREE.Scene();_3d.scene.background=new THREE.Color(0x060b14);_3d.cam=new THREE.PerspectiveCamera(60,1,0.1,10);_3d.cam.position.set(0,0.3,1.2);_3d.cam.lookAt(0,0.3,0);_3d.rnd=new THREE.WebGLRenderer({antialias:true});_3d.rnd.setPixelRatio(1);_3d.rnd.setSize(400,200);b.appendChild(_3d.rnd.domElement);const jm=new THREE.MeshBasicMaterial({color:0x00e676}),bm=new THREE.LineBasicMaterial({color:0x00e676,opacity:0.4,transparent:true});for(let i=0;i<21;i++){const s=new THREE.SphereGeometry(0.015,8,8);_3d.joints.push(new THREE.Mesh(s,jm));_3d.scene.add(_3d.joints[i]);}_3d.pairs=[[0,1],[0,5],[0,17],[1,2],[2,3],[3,4],[5,6],[6,7],[7,8],[9,10],[10,11],[11,12],[13,14],[14,15],[15,16],[17,18],[18,19],[19,20],[5,9],[9,13],[13,17]];_3d.bones=_3d.pairs.map(()=>{const g=new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(),new THREE.Vector3()]);return new THREE.Line(g,bm);});_3d.bones.forEach(l=>_3d.scene.add(l));_3d.ok=true;_3d.rnd.render(_3d.scene,_3d.cam);log("Mano 3D activa");}catch(e){}}
   if(typeof THREE!=="undefined"){setup();return;}
   const s=document.createElement("script");s.src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js";s.onload=setup;document.head.appendChild(s);
 })();
-function update3D(lm){if(!_3d.ok||!lm||lm.length<21)return;for(let i=0;i<21;i++)_3d.joints[i].position.set((lm[i].x-0.5)*0.6,(0.5-lm[i].y)*0.45+0.2,lm[i].z*0.3);_3d.pairs.forEach(([a,b],i)=>_3d.bones[i].geometry.setFromPoints([_3d.joints[a].position,_3d.joints[b].position]));_3d.rnd.render(_3d.scene,_3d.cam);}
+function update3D(lm){if(!_3d.ok||!lm||lm.length<21)return;for(let i=0;i<21;i++)_3d.joints[i].position.set((lm[i].x-0.5)*1.0,(0.5-lm[i].y)*0.75+0.2,lm[i].z*0.5);_3d.pairs.forEach(([a,b],i)=>_3d.bones[i].geometry.setFromPoints([_3d.joints[a].position,_3d.joints[b].position]));_3d.rnd.render(_3d.scene,_3d.cam);}
 
 const DRAW=[[0,1],[0,5],[0,17],[1,2],[2,3],[3,4],[5,6],[6,7],[7,8],[9,10],[10,11],[11,12],[13,14],[14,15],[15,16],[17,18],[18,19],[19,20],[5,9],[9,13],[13,17]];
 
