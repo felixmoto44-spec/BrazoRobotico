@@ -162,5 +162,42 @@ Para acceder al Qualcomm Linux: esperar a que arranque y conectarse vía WiFi o 
 4. `setPixelRatio(1)` en Three.js
 **Lección:** En dispositivos móviles/embebidos, priorizar rendimiento sobre estética. Cada filtro CSS cuesta fps.
 
+### Error: Grabación no reproduce ángulos de servos
+**Síntoma:** La reproducción de una grabación muestra la mano 3D pero los ángulos de servos y la gráfica no se actualizan (NaN).
+**Causa:** Los frames grabados almacenaban `landmarks` pero NO `angles`. La función `updateServos(f.angles)` recibía `undefined`.
+**Solución:**
+1. Variable global `lastAngles` que se actualiza con cada respuesta del WebSocket
+2. La grabación ahora almacena `angles: [...lastAngles]` junto con los landmarks
+3. La reproducción comprueba `if(f.angles)` antes de usarlos (compatible con grabaciones antiguas)
+**Lección:** Al grabar datos que dependen de respuestas asíncronas (WebSocket), almacenar siempre una copia del último estado recibido.
+
+### Error: Mano 3D congelada durante la reproducción (todos los frames idénticos)
+**Síntoma:** La mano 3D no se mueve durante el replay aunque la grabación se hizo con movimiento.
+**Causa:** `recordedFrames.push({landmarks, ...})` guardaba una **referencia** al array `landmarks`, no una copia. El array `landmarks` es modificado in-place por `smooth()` en cada frame. Al final de la grabación, todos los 471 frames apuntan al mismo array (la última posición).
+**Solución:** Deep copy con `.map()`: `landmarks: landmarks.map(p=>({x:p.x, y:p.y, z:p.z}))`. Cada frame obtiene su propia copia independiente.
+**Lección:** En JavaScript, los objetos y arrays se pasan por referencia. `push({obj})` guarda una referencia, no una copia. Siempre usar spread `[...arr]` o `.map()` para deep copy al almacenar en arrays de frames.
+
+### Error: Mano real interfiere durante la reproducción
+**Síntoma:** Al reproducir una grabación, la mano real frente a la cámara sigue afectando a la mano 3D y a los servos.
+**Causa:** El `loop()` de tracking seguía ejecutándose en segundo plano mientras el `setInterval` de reproducción intentaba mostrar la grabación. Ambos competían por actualizar la mano 3D.
+**Solución:**
+1. `tracking = false` al iniciar la reproducción
+2. `cancelAnimationFrame(animFrame)` para cancelar cualquier frame pendiente
+3. `if(!tracking || replaying) return` en el `loop()` como doble check
+4. `wasTracking` guarda el estado previo para restaurarlo al terminar
+**Lección:** Cuando dos bucles de renderizado compiten (rAF vs setInterval), siempre pausar uno explícitamente. Un solo flag booleano puede no bastar si hay frames encolados.
+
+### Error: Reproducción con `setInterval` no renderiza WebGL
+**Síntoma:** La mano 3D no se actualiza durante el replay a pesar de que `update3D()` se llama correctamente.
+**Causa:** `setInterval` no está sincronizado con el ciclo de refresco de pantalla. WebGL necesita `requestAnimationFrame` para sincronizar el renderizado con el display.
+**Solución:** Sustituir `setInterval` por un bucle recursivo con `setTimeout(() => requestAnimationFrame(replayLoop), 36)`. Esto asegura que cada frame se renderiza dentro del ciclo de refresco de la GPU.
+**Lección:** Three.js y WebGL requieren `requestAnimationFrame` para el renderizado. `setInterval` puede causar frames perdidos o artefactos visuales.
+
+### Error: Mano 3D se ve muy pequeña
+**Síntoma:** La mano virtual en el visor 3D aparece minúscula, ocupando solo una fracción del cuadro.
+**Causa:** La escala de mapeo de landmarks (0-1 normalizado) a coordenadas 3D era demasiado pequeña: `(x-0.5)*0.6` producía objetos de ~0.3 unidades en un frustum de 1.38 unidades visibles.
+**Solución:** Multiplicar la escala ×2.2: `(x-0.5)*1.0`, `(0.5-y)*0.75`, `z*0.5`. Ajustar cámara: FOV 60°, z=1.2.
+**Lección:** La escala del modelo 3D debe calibrarse visualmente. Los landmarks normalizados de MediaPipe (0-1) necesitan un factor de amplificación para ser visibles en Three.js.
+
 ---
-*Última actualización: 2026-05-07 01:30*
+*Última actualización: 2026-05-08 06:00*
